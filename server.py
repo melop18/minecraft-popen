@@ -18,8 +18,9 @@ else:
 
 java_command = ['java', '-Xmx3072M', '-Xms2072M', '-jar', 'server.jar', 'nogui']
 
+input('Por favor guarda tu archivo jar del servidor en la misma carpeta que este script, llamalo "server.jar" y presiona enter...')
+
 def main():
-    input('Por favor guarda tu archivo jar del servidor en la misma carpeta que este script, llamalo "server.jar" y presiona enter...')
     if not os.path.exists(server_jar):
         print('Error: No se ha encontrado el archivo server.jar, asegurate de que se llama "server.jar" y está en la misma carpeta que este script')
         sys.exit(1)
@@ -28,12 +29,12 @@ def main():
 1-Iniciar servidor
 2-Añadir log
 3-Borrar log
-4-Iniciar playit
-5-Salir
+4-Salir
 --------- '''))
     if selected == 1:
         try:
-            os.system('echo eula = true > eula.txt')
+            with open('eula.txt', 'w') as eula_file:
+                eula_file.write('eula=true\n')
 
             process = subprocess.Popen(java_command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE, text = True)
 
@@ -45,7 +46,7 @@ def main():
                     break
 
                 for log_in_logs in logs:
-                    if log_in_logs in log:
+                    if log_in_logs in log and '<' in log:
                         process.stdin.write(logs[log_in_logs] + '\n')
                         process.stdin.flush()
         
@@ -57,19 +58,19 @@ def main():
         add = str(input('Que log queres añadir? '))
         if not add:
             print('Por favor, escribe algo')
-            sys.exit(1)
+            main()
         execute = str(input('Que comando quieres ejecutar? '))
         if not execute:
             print('Por favor, escribe algo')
-            sys.exit(1)
-        if not logs[add]:
+            main()
+        if add not in logs:
             logs[add] = execute
             with open('logs_py.txt', 'w') as f:
                 json.dump(logs, f, indent = 4)
             main()
         else:
             print('Ese ya esta creado!')
-            sys.exit(1)
+            main()
         
 
     elif selected == 3:
@@ -77,20 +78,25 @@ def main():
             print('Estos son los logs creados:')
             for log in logs:
                 print(f'-{log} -> {logs[log]}')
+            print('-Para cancelar escribe "cancel"')
             log_to_remove = str(input('--------- '))
             if not log_to_remove:
                 print('Por favor, introduce un log')
-                sys.exit(1)
+                main()
             if not log_to_remove in logs:
                 print('Por favor, escoge uno que este en la lista')
-            logs.pop(log_to_remove)
-            with open('logs_py.txt', 'w') as f:
-                json.dump(logs, f, indent = 4)
-            main()
+            if log_to_remove.lower() == 'cancel':
+                print('Saliendo...')
+                main()
+            else:
+                logs.pop(log_to_remove)
+                with open('logs_py.txt', 'w') as f:
+                    json.dump(logs, f, indent = 4)
+                main()
         
         if not logs:
             print('Por favor, crea un log primero.')
-            sys.exit(1)
+            main()
 
     elif selected == 4:
         print('Adios!')
@@ -98,7 +104,7 @@ def main():
 
     else:
         print('Por favor, introduce un numero valido')
-        sys.exit(1)
+        main()
 
 if __name__ == '__main__':
     main()
